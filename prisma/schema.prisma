@@ -26,7 +26,7 @@ model Post {
   updatedAt DateTime  @updatedAt
 }
 
-model Comment {a
+model Comment {
   id        Int      @id @default(autoincrement())
   content   String
   post      Post     @relation(fields: [postId], references: [id])
