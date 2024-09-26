@@ -1,26 +1,68 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
 @Injectable()
 export class CommentService {
-  create(createCommentDto: CreateCommentDto) {
-    return 'This action adds a new comment';
-  }
+  constructor(private prisma : PrismaService){}
+  async create(CreateCommentDto: CreateCommentDto) {
+    return this.prisma.comment.create({
+        data: {
+            content: CreateCommentDto.content,
+            postId: CreateCommentDto.postId,
+            authorId: CreateCommentDto.authorId,
+        },
+    });
+}
 
   findAll() {
-    return `This action returns all comment`;
+    return this.prisma.comment.findMany({
+      include: {
+        author: true,
+      },
+    });
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} comment`;
+    return this.prisma.comment.findUnique({
+      where: {
+        id: id
+      },
+      include: {
+        author: true,
+      },
+    });
   }
 
-  update(id: number, updateCommentDto: UpdateCommentDto) {
-    return `This action updates a #${id} comment`;
-  }
+  async update(id: number, updateCommentDto: UpdateCommentDto) {
+    // Check if the post exists
+    const existingComment = await this.prisma.comment.findUnique({
+      where: { id: id },
+    });
 
-  remove(id: number) {
-    return `This action removes a #${id} comment`;
+    if (!existingComment) {
+      throw new NotFoundException(`Comment with ID ${id} not found`);
+    }
+
+    return this.prisma.comment.update({
+      where: { id: id },
+      data: {
+        content: updateCommentDto.content,
+      },
+    });
+  }
+  async remove(id: number) {
+    const existingComment= await this.prisma.comment.findUnique({
+      where: { id: id },
+    });
+
+    if (!existingComment) {
+      throw new NotFoundException(`Comment with ID ${id} not found`);
+    }
+
+    return this.prisma.comment.delete({
+      where: { id: id },
+    });
   }
 }
